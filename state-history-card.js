@@ -1356,6 +1356,17 @@ class StateHistoryCard extends HTMLElement {
             font-size: 12px;
           }
         }
+        ${this._config.show_entity_labels === false ? `
+          .row,
+          .axis {
+            display: block;
+          }
+
+          .row > .name,
+          .axis > :first-child:not(.axis-track) {
+            display: none;
+          }
+        ` : ""}
       </style>
       <ha-card style="--entity-label-width:${layout.labelWidth}px;--entity-label-gap:${layout.gap}px">
         ${
