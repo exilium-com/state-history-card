@@ -1164,6 +1164,7 @@ class StateHistoryCard extends HTMLElement {
         }
 
         .track {
+          grid-column: 2;
           position: relative;
           height: var(--state-history-row-height, 18px);
           overflow: hidden;
