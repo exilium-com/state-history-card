@@ -598,6 +598,14 @@ class StateHistoryCard extends HTMLElement {
     return !(normalized === "off" || normalized === "false" || normalized === "none" || normalized === "hidden");
   }
 
+  _entityLabelsVisible() {
+    const value = this._config.show_entity_labels;
+    if (typeof value !== "string") return true;
+
+    const normalized = value.trim().toLowerCase();
+    return !(normalized === "off" || normalized === "false" || normalized === "none" || normalized === "hidden");
+  }
+
   _isNumericEntry(entry) {
     const mode = String(entry.mode || "").trim().toLowerCase();
     if (mode === "state" || mode === "discrete") return false;
@@ -1042,6 +1050,7 @@ class StateHistoryCard extends HTMLElement {
     const labelMode = this._labelMode();
     const axisTicks = labelMode === "on" ? this._axisTicks(startMs, endMs) : [];
     const showStateLabels = this._stateLabelsVisible();
+    const showEntityLabels = this._entityLabelsVisible();
     const layout = this._layoutMetrics();
 
     this.shadowRoot.innerHTML = `
@@ -1373,22 +1382,28 @@ class StateHistoryCard extends HTMLElement {
                         const labelAction = this._labelAction(entry);
                         const labelActionColor = this._labelActionColor(entry, intervals);
                         return `
-                        <div class="row">
-                          <button
-                            class="name"
-                            title="${this._escape(this._displayName(entry))}"
-                            data-entity-id="${this._escapeAttr(entry.entity)}"
-                            data-more-info-entity="${this._escapeAttr(this._moreInfoEntity(entry))}"
-                            data-more-info="true"
-                            ${labelAction ? `data-action="${this._escapeAttr(labelAction)}"` : ""}
-                            style="--label-action-color:${this._escapeAttr(labelActionColor)}"
-                            type="button"
-                          >
-                            ${this._escape(this._displayName(entry))}
-                          </button>
-                          ${this._trackHtml(entry, intervals, startMs, spanMs, showStateLabels)}
-                        </div>
-                      `;
+                          <div class="row">
+                            ${
+                              showEntityLabels
+                                ? `
+                                  <button
+                                    class="name"
+                                    title="${this._escape(this._displayName(entry))}"
+                                    data-entity-id="${this._escapeAttr(entry.entity)}"
+                                    data-more-info-entity="${this._escapeAttr(this._moreInfoEntity(entry))}"
+                                    data-more-info="true"
+                                    ${labelAction ? `data-action="${this._escapeAttr(labelAction)}"` : ""}
+                                    style="--label-action-color:${this._escapeAttr(labelActionColor)}"
+                                    type="button"
+                                  >
+                                    ${this._escape(this._displayName(entry))}
+                                  </button>
+                                `
+                                : ""
+                            }
+                            ${this._trackHtml(entry, intervals, startMs, spanMs, showStateLabels)}
+                          </div>
+                        `;
                       }
                     )
                     .join("")}
@@ -1795,31 +1810,46 @@ class StateHistoryCard extends HTMLElement {
 
   _layoutMetrics() {
     const cardWidth = this.getBoundingClientRect().width;
+    const hideLabels = this._config?.show_entity_labels === false;
+  
     if (!cardWidth) {
       return {
         axisWidth: 320,
-        gap: 8,
-        labelWidth: this._configuredLabelWidthPx(400) || 72,
+        gap: hideLabels ? 0 : 8,
+        labelWidth: hideLabels ? 0 : (this._configuredLabelWidthPx(400) || 72),
       };
     }
-
+  
     const compact = cardWidth <= 520;
     const contentPadding = compact ? 24 : 32;
-    const gap = compact ? 6 : 8;
+    const gap = hideLabels ? 0 : (compact ? 6 : 8);
     const innerWidth = Math.max(0, cardWidth - contentPadding);
-    const minLabelWidth = compact ? 68 : 72;
-    const configuredLabelWidth = this._configuredLabelWidthPx(innerWidth);
-    const autoLabelWidth = this._autoLabelWidthPx(innerWidth, minLabelWidth);
-    const desiredLabelWidth = configuredLabelWidth || Math.min(240, autoLabelWidth);
-    const maxLabelWidth = Math.max(minLabelWidth, innerWidth - gap - 120);
-    const labelWidth = Math.round(Math.min(maxLabelWidth, Math.max(minLabelWidth, desiredLabelWidth)));
-
-    return {
-      axisWidth: Math.max(120, Math.round(innerWidth - labelWidth - gap)),
-      gap,
-      labelWidth,
+  
+    if (hideLabels) {
+      return {
+        axisWidth: Math.round(innerWidth),
+        gap: 0,
+        labelWidth: 0,
     };
   }
+
+  const minLabelWidth = compact ? 68 : 72;
+  const configuredLabelWidth = this._configuredLabelWidthPx(innerWidth);
+  const autoLabelWidth = this._autoLabelWidthPx(innerWidth, minLabelWidth);
+  const desiredLabelWidth = configuredLabelWidth || Math.min(240, autoLabelWidth);
+  const maxLabelWidth = Math.max(minLabelWidth, innerWidth - gap - 120);
+  const labelWidth = Math.round(
+    Math.min(maxLabelWidth, Math.max(minLabelWidth, desiredLabelWidth))
+  );
+
+  return {
+    axisWidth: Math.max(120, Math.round(innerWidth - labelWidth - gap)),
+    gap,
+    labelWidth,
+  };
+}
+
+  
 
   _configuredLabelWidthPx(innerWidth) {
     const value = this._config?.label_width;
