@@ -140,6 +140,7 @@ entities:
 | `entities[].state_labels` | object | none | Per-entity state label map. Overrides global labels for that entity. |
 | `entities[].color_source` | string | global/`state` | Per-entity clickable label underline color source. Use `light` for live light attribute color or `state` for graph state colors. |
 | `show_legend` | boolean | `true` | Legacy alias. Set to `false` to hide the legend. |
+| `show_entity_labels` | boolean | `off` | Set to off or hidden to show only the bar graph for each line without the label preceeding it. |
 
 The card also accepts `colors` as an alias for `state_colors`, `labels` as an alias for `state_labels`, and `factor` as an alias for `scale`. Set `labels: "off"` to hide inline state labels.
 
